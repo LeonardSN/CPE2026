@@ -29,7 +29,7 @@ class ExerciseGenerator {
       type: ExerciseType.multipleChoice,
       prompt: core.text,
       answer: '${core.value}',
-      choices: _choices(core.value, count),
+      choices: _choices(core.value, count, core.preset),
       explanation: core.explanation,
     );
   }
@@ -40,7 +40,7 @@ class ExerciseGenerator {
     final chapter = Skills.byId(skillId);
     final q = chapter.generate!(level, _rng);
     return _Core(q.prompt, q.answer, q.explanation,
-        allowTrueFalse: q.allowTrueFalse);
+        allowTrueFalse: q.allowTrueFalse, preset: q.choices);
   }
 
   // ---------------------------------------------------------------------
@@ -69,7 +69,7 @@ class ExerciseGenerator {
           type: type,
           prompt: core.text,
           answer: '${core.value}',
-          choices: _choices(core.value),
+          choices: _choices(core.value, 4, core.preset),
           explanation: core.explanation,
         );
       case ExerciseType.input:
@@ -106,7 +106,19 @@ class ExerciseGenerator {
     return _pick(options);
   }
 
-  List<String> _choices(int v, [int count = 4]) {
+  List<String> _choices(int v, [int count = 4, List<int>? preset]) {
+    if (preset != null) {
+      // Réponses imposées par le chapitre : on garde la bonne + des autres.
+      final others = preset.where((x) => x != v).toSet().toList()..shuffle(_rng);
+      final list = <int>[v, ...others.take(count - 1)];
+      // On complète si le chapitre n'en a pas fourni assez.
+      for (final x in [v + 1, v + 2, v + 10, v - 1, v + 3, v + 4]) {
+        if (list.length >= count) break;
+        if (!list.contains(x) && (v < 0 || x >= 0)) list.add(x);
+      }
+      list.shuffle(_rng);
+      return list.map((e) => '$e').toList();
+    }
     final candidates = {v + 1, v - 1, v + 2, v - 2, v + 10, v - 10, -v}
         .where((x) => (v < 0 || x >= 0) && x != v)
         .toList()
@@ -122,5 +134,8 @@ class _Core {
   final String explanation;
   final bool allowTrueFalse;
 
-  _Core(this.text, this.value, this.explanation, {this.allowTrueFalse = true});
+  final List<int>? preset;
+
+  _Core(this.text, this.value, this.explanation,
+      {this.allowTrueFalse = true, this.preset});
 }

@@ -14,13 +14,17 @@ class Skills {
   /// Chapitres « réels » (sans le boss) suivis dans l'espace parent.
   static List<Chapter> get tracked => Curriculum.current.chapters;
 
-  /// Recherche un chapitre dans TOUS les cycles.
-  static Chapter byId(String id) {
-    for (final c in Curriculum.cycles) {
+  /// Recherche un chapitre dans TOUS les cycles (null si inconnu,
+  /// par exemple un ancien chapitre supprimé).
+  static Chapter? tryById(String id) {
+    for (final c in Curriculum.allCycles) {
       for (final ch in c.map) {
         if (ch.id == id) return ch;
       }
     }
-    throw ArgumentError('Chapitre inconnu : $id');
+    return null;
   }
+
+  static Chapter byId(String id) =>
+      tryById(id) ?? (throw ArgumentError('Chapitre inconnu : $id'));
 }

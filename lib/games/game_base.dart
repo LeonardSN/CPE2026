@@ -313,6 +313,10 @@ abstract class GameState<T extends GameScreen> extends State<T>
     );
   }
 
+  /// « 7 + 5 = ? » sur une seule ligne : on peut afficher « 7 + 5 = 12 ».
+  bool _isEquation(Exercise ex) =>
+      ex.prompt.endsWith('= ?') && !ex.prompt.contains('\n');
+
   Widget _mistakeOverlay(Exercise ex) {
     return Positioned.fill(
       child: Container(
@@ -337,11 +341,11 @@ abstract class GameState<T extends GameScreen> extends State<T>
                       color: AppColors.red)),
               const SizedBox(height: 10),
               Text(
-                ex.prompt.length > 30 ? ex.prompt : ex.prompt.replaceFirst('?', ex.answer),
+                _isEquation(ex) ? ex.prompt.replaceFirst('?', ex.answer) : ex.prompt,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
               ),
-              if (ex.prompt.length > 30) ...[
+              if (!_isEquation(ex)) ...[
                 const SizedBox(height: 6),
                 Text('Réponse : ${ex.answer}',
                     textAlign: TextAlign.center,

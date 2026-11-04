@@ -40,7 +40,7 @@ Fichiers : `lib/games/` (mini-jeux), `lib/screens/village_screen.dart`, `lib/mod
 
 | Cycle | Fichier à compléter | État |
 |---|---|---|
-| 🎒 Primaire | `lib/curriculum/primaire.dart` | 4 chapitres + boss |
+| 🎒 Primaire | `lib/curriculum/primaire.dart` | CP, CE1 (7 chapitres), CE2, CM1, CM2 |
 | 📐 Collège | `lib/curriculum/college.dart` | à compléter |
 | 🎓 Lycée | `lib/curriculum/lycee.dart` | à compléter |
 
@@ -50,6 +50,8 @@ un chapitre, il devient jouable dans l'écran « Choisis ton niveau », avec les
 le village et l'espace parent. **Pas besoin de toucher aux autres fichiers.**
 
 Le style (couleurs, nom, mascotte) est centralisé dans `lib/theme.dart`.
+
+Pour vérifier que tous les chapitres génèrent des questions valides : `flutter test`.
 
 ## Ce que contient le MVP
 

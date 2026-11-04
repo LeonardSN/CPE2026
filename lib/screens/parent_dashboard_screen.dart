@@ -83,7 +83,9 @@ class ParentDashboardScreen extends StatelessWidget {
                         style: TextStyle(color: AppColors.greyDark))
                     : Column(
                         children: [
-                          for (final h in store.history.take(6))
+                          for (final h in store.history
+                              .where((h) => Skills.tryById(h.skillId) != null)
+                              .take(6))
                             ListTile(
                               contentPadding: EdgeInsets.zero,
                               leading: Text(Skills.byId(h.skillId).emoji,

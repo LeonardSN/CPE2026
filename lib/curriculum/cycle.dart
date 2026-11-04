@@ -18,11 +18,17 @@ class Question {
   /// (problèmes rédigés, inconnue au milieu...).
   final bool allowTrueFalse;
 
+  /// Facultatif : réponses proposées imposées (ex : « Quel est le plus
+  /// grand ? » -> les nombres à comparer). Doit contenir [answer].
+  /// Si null, les mauvaises réponses sont générées automatiquement.
+  final List<int>? choices;
+
   const Question({
     required this.prompt,
     required this.answer,
     required this.explanation,
     this.allowTrueFalse = true,
+    this.choices,
   });
 }
 
@@ -96,4 +102,42 @@ class Cycle {
 
   /// Tous les chapitres affichés sur la carte, boss compris.
   List<Chapter> get map => [...chapters, boss];
+}
+
+/// Une « école » : Primaire, Collège, Lycée.
+/// Elle peut contenir plusieurs classes (CP, CE1...) : chacune est un [Cycle]
+/// avec sa propre carte. Le collège et le lycée n'ont qu'une seule carte.
+class School {
+  final String id;
+  final String title;
+  final String subtitle;
+  final String emoji;
+  final Color color;
+  final List<Cycle> grades;
+
+  /// Classe mise en avant (ex : CE1).
+  final String? recommendedGradeId;
+
+  const School({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.emoji,
+    required this.color,
+    required this.grades,
+    this.recommendedGradeId,
+  });
+
+  /// École à une seule carte (collège, lycée).
+  School.single(Cycle cycle)
+      : id = cycle.id,
+        title = cycle.title,
+        subtitle = cycle.subtitle,
+        emoji = cycle.emoji,
+        color = cycle.color,
+        grades = [cycle],
+        recommendedGradeId = null;
+
+  bool get isAvailable => grades.any((g) => g.isAvailable);
+  bool get hasSeveralGrades => grades.length > 1;
 }
