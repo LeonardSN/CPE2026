@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../logic/sound.dart';
 import '../models/game_type.dart';
 import 'game_base.dart';
 
@@ -46,6 +47,7 @@ class _FruitsGameState extends GameState<FruitsGame> {
     if (!_resolved && _fruitY >= _basketY - 0.06) {
       _resolved = true;
       _caught = current.choices[_basketLane];
+      Sfx.play(Sound.catchFruit, volume: 0.7);
       submit(_caught);
     }
   }

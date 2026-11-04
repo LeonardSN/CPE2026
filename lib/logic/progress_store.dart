@@ -10,6 +10,7 @@ import '../models/game_type.dart';
 import '../models/skill.dart';
 import '../models/village.dart';
 import 'adaptive_engine.dart';
+import 'sound.dart';
 
 /// Résumé d'une leçon terminée (affiché dans le tableau de bord parent).
 class LessonRecord {
@@ -53,6 +54,8 @@ class ProgressStore extends ChangeNotifier {
   bool unlockAll = false;
   int coins = 30; // cadeau de bienvenue pour construire tout de suite
   String cycleId = '';
+  bool soundOn = true;
+  bool musicOn = true;
 
   final Map<String, double> ratings = {};
   final Map<String, int> attempts = {};
@@ -77,6 +80,10 @@ class ProgressStore extends ChangeNotifier {
     unlockAll = _prefs.getBool('unlockAll') ?? false;
     coins = _prefs.getInt('coins') ?? 30;
     cycleId = _prefs.getString('cycleId') ?? '';
+    soundOn = _prefs.getBool('soundOn') ?? true;
+    musicOn = _prefs.getBool('musicOn') ?? true;
+    Sfx.soundOn = soundOn;
+    Sfx.musicOn = musicOn;
     Curriculum.current = Curriculum.byId(cycleId);
     _readMap('plays', plays, (v) => v as int);
     village.clear();
@@ -110,6 +117,8 @@ class ProgressStore extends ChangeNotifier {
     await _prefs.setBool('unlockAll', unlockAll);
     await _prefs.setInt('coins', coins);
     await _prefs.setString('cycleId', cycleId);
+    await _prefs.setBool('soundOn', soundOn);
+    await _prefs.setBool('musicOn', musicOn);
     await _prefs.setString('plays', jsonEncode(plays));
     await _prefs.setString(
         'village', jsonEncode(village.map((k, v) => MapEntry('$k', v))));
@@ -192,6 +201,24 @@ class ProgressStore extends ChangeNotifier {
   }
 
   // ------------------------------------------------------------------
+  // Sons
+  // ------------------------------------------------------------------
+  Future<void> setSound(bool v) async {
+    soundOn = v;
+    Sfx.soundOn = v;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setMusic(bool v) async {
+    musicOn = v;
+    Sfx.musicOn = v;
+    if (!v) await Sfx.stopMusic();
+    await _save();
+    notifyListeners();
+  }
+
+  // ------------------------------------------------------------------
   // Cycle d'études (primaire, collège, lycée)
   // ------------------------------------------------------------------
   Future<void> setCycle(String id) async {
@@ -227,6 +254,7 @@ class ProgressStore extends ChangeNotifier {
     if (coins < item.price || village.containsKey(tile)) return false;
     coins -= item.price;
     village[tile] = item.id;
+    Sfx.play(Sound.build);
     _save();
     notifyListeners();
     return true;
@@ -235,6 +263,7 @@ class ProgressStore extends ChangeNotifier {
   void sell(int tile) {
     final item = Village.byId(village[tile] ?? '');
     if (item == null) return;
+    Sfx.play(Sound.coin);
     coins += item.price ~/ 2;
     village.remove(tile);
     _save();

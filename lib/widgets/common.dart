@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../logic/sound.dart';
 import '../theme.dart';
 
 /// Bouton « 3D » façon jeu mobile, avec un rebord en bas.
@@ -42,6 +43,7 @@ class _ChunkyButtonState extends State<ChunkyButton> {
       onTapUp: enabled
           ? (_) {
               setState(() => _down = false);
+              Sfx.play(Sound.tap, volume: 0.6);
               widget.onPressed!();
             }
           : null,

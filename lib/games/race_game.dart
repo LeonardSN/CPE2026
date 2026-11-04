@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../logic/sound.dart';
 import '../models/game_type.dart';
 import '../theme.dart';
 import 'game_base.dart';
@@ -18,6 +19,7 @@ class _RaceGameState extends GameState<RaceGame> {
   double _rival = 0;
   late double _rivalSpeed;
   String? _flash;
+  int _lastCount = 4;
   double _flashUntil = 0;
 
   @override
@@ -46,6 +48,15 @@ class _RaceGameState extends GameState<RaceGame> {
 
   @override
   void onTick(double dt) {
+    final left = (_countdown - gameTime).ceil();
+    if (left != _lastCount) {
+      _lastCount = left;
+      if (left > 0) {
+        Sfx.play(Sound.beep);
+      } else if (left == 0) {
+        Sfx.play(Sound.go);
+      }
+    }
     if (gameTime < _countdown) return;
     _rival += _rivalSpeed * dt;
     _player += (progress - _player) * (dt * 6).clamp(0.0, 1.0);

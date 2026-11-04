@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../logic/exercise_generator.dart';
 import '../logic/progress_store.dart';
+import '../logic/sound.dart';
 import '../models/exercise.dart';
 import '../models/game_type.dart';
 import '../models/skill.dart';
@@ -77,11 +78,13 @@ abstract class GameState<T extends GameScreen> extends State<T>
     current = _makeQuestion();
     onNewQuestion();
     _ticker = createTicker(_onTick)..start();
+    Sfx.startMusic();
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    Sfx.stopMusic();
     super.dispose();
   }
 
@@ -126,6 +129,7 @@ abstract class GameState<T extends GameScreen> extends State<T>
       coinsEarned += gain;
       store.addCoins(gain);
       HapticFeedback.lightImpact();
+      Sfx.play(combo >= 3 ? Sound.coin : Sound.correct);
       onCorrect(choice);
       busy = true;
       Future.delayed(const Duration(milliseconds: 550), () {
@@ -140,12 +144,14 @@ abstract class GameState<T extends GameScreen> extends State<T>
       combo = 0;
       if (usesHearts) hearts--;
       HapticFeedback.heavyImpact();
+      Sfx.play(Sound.wrong);
       onWrong(choice);
       mistake = current;
       paused = true; // on affiche l'explication
     }
 
     if (levelUp != null) {
+      Sfx.play(Sound.levelup);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -167,6 +173,7 @@ abstract class GameState<T extends GameScreen> extends State<T>
     hearts--;
     combo = 0;
     HapticFeedback.heavyImpact();
+    Sfx.play(Sound.monster);
     if (isLost) _finish(false);
   }
 
@@ -189,6 +196,8 @@ abstract class GameState<T extends GameScreen> extends State<T>
   Future<void> _finish(bool success) async {
     if (finished) return;
     finished = true;
+    await Sfx.stopMusic();
+    Sfx.play(success ? Sound.win : Sound.lose);
     final seconds = DateTime.now().difference(_start).inSeconds;
     if (success) {
       const bonus = 15;
@@ -271,6 +280,24 @@ abstract class GameState<T extends GameScreen> extends State<T>
                       color: AppColors.orange,
                       fontSize: 16)),
             ),
+          GestureDetector(
+            onTap: () async {
+              final on = !(store.soundOn || store.musicOn);
+              await store.setSound(on);
+              await store.setMusic(on);
+              if (on) Sfx.startMusic();
+              setState(() {});
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(
+                store.soundOn || store.musicOn
+                    ? Icons.volume_up_rounded
+                    : Icons.volume_off_rounded,
+                color: AppColors.greyDark,
+              ),
+            ),
+          ),
           if (usesHearts)
             Text('❤️$hearts',
                 style: const TextStyle(

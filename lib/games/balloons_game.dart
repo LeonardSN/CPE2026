@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../logic/sound.dart';
 import '../models/game_type.dart';
 import 'game_base.dart';
 
@@ -78,6 +79,7 @@ class _BalloonsGameState extends GameState<BalloonsGame> {
 
   void _tap(_Balloon b) {
     if (!acceptsInput || b.popped) return;
+    Sfx.play(Sound.pop, volume: 0.8);
     if (b.label == current.answer) {
       b.popped = true;
     } else {

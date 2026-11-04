@@ -106,9 +106,21 @@ class ParentDashboardScreen extends StatelessWidget {
 
               // ---- Outils de démo ----
               _Section(
-                title: '⚙️ Réglages (démo)',
+                title: '⚙️ Réglages',
                 child: Column(
                   children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('🔊 Effets sonores'),
+                      value: store.soundOn,
+                      onChanged: store.setSound,
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('🎵 Musique dans les jeux'),
+                      value: store.musicOn,
+                      onChanged: store.setMusic,
+                    ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Débloquer toutes les leçons'),

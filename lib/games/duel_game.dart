@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../logic/sound.dart';
 import '../models/game_type.dart';
 import '../theme.dart';
 import 'game_base.dart';
@@ -66,6 +67,7 @@ class _DuelGameState extends GameState<DuelGame> {
     final dmg = combo >= 3 ? 2 : 1;
     _hp = max(0, _hp - dmg);
     _hitAt = gameTime;
+    Sfx.play(Sound.hit, volume: 0.9);
     _hitText = dmg == 2 ? 'COUP CRITIQUE ! -2' : '-1';
   }
 
