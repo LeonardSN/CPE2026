@@ -21,3 +21,27 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sounds/
+    - assets/images/
+
+  # Polices de la charte graphique (licence SIL Open Font, voir assets/fonts)
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito-400.ttf
+        - asset: assets/fonts/Nunito-600.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito-700.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito-800.ttf
+          weight: 800
+        - asset: assets/fonts/Nunito-900.ttf
+          weight: 900
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand-400.ttf
+        - asset: assets/fonts/Quicksand-500.ttf
+          weight: 500
+        - asset: assets/fonts/Quicksand-600.ttf
+          weight: 600
+        - asset: assets/fonts/Quicksand-700.ttf
+          weight: 700

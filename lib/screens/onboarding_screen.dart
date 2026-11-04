@@ -46,9 +46,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              const Center(
-                child: Text(AppInfo.mascotEmoji, style: TextStyle(fontSize: 90)),
-              ),
+              const Center(child: MascotImage(size: 170)),
               const SizedBox(height: 16),
               const Text(
                 'Salut, moi c\'est ${AppInfo.mascotName} !',
@@ -56,11 +54,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Je vais t\'aider à devenir un champion des maths.\n'
                 'Comment tu t\'appelles ?',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 17, color: AppColors.greyDark),
+                style: AppText.body.copyWith(fontSize: 17, color: context.muted),
               ),
               const SizedBox(height: 28),
               TextField(
@@ -71,10 +69,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 decoration: InputDecoration(
                   hintText: 'Ton prénom',
                   filled: true,
-                  fillColor: const Color(0xFFF7F7F7),
+                  fillColor: context.colors.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.grey, width: 2),
+                    borderSide: BorderSide(color: context.colors.outline, width: 2),
                   ),
                 ),
                 onChanged: (_) => setState(() {}),

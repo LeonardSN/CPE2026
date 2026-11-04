@@ -1,4 +1,4 @@
-# Mathou 🦊 — MVP CPE 2026
+# Mathou 🐱 — MVP CPE 2026
 
 Application mobile Flutter (Android / iOS) pour apprendre les maths comme sur Duolingo.
 Niveau ciblé pour le MVP : **CE1 – CE2**.
@@ -36,22 +36,51 @@ L'APK se trouve dans `build\app\outputs\flutter-apk\app-release.apk`.
 
 Fichiers : `lib/games/` (mini-jeux), `lib/screens/village_screen.dart`, `lib/models/village.dart`.
 
-## 👥 Travailler en équipe : un fichier par cycle
+## 🐱 Identité visuelle
 
-| Cycle | Fichier à compléter | État |
+- Mascotte : le chat **Mathou** (`assets/images/mathou.png`).
+- Palette : orange `#FF8C38`, bleu foncé `#16355F`, noir `#232323`, blanc.
+- Polices : **Nunito** (titres) et **Quicksand** (textes), licence SIL OFL, dans `assets/fonts/`.
+- Un **thème par cycle** (Cycle 1 → Lycée), en **clair ou sombre** (Espace parent → Réglages → Apparence).
+  Tout est dans `lib/theme.dart`.
+
+## 📚 Programme : de la maternelle à la Terminale
+
+| Cycle | Fichier | Classes |
 |---|---|---|
-| 🎒 Primaire | `lib/curriculum/primaire.dart` | CP, CE1 (7 chapitres), CE2, CM1, CM2 |
-| 📐 Collège | `lib/curriculum/college.dart` | à compléter |
-| 🎓 Lycée | `lib/curriculum/lycee.dart` | à compléter |
+| 🧸 Cycle 1 | `lib/curriculum/cycle1.dart` | PS, MS, GS |
+| 🎒 Cycle 2 | `lib/curriculum/cycle2.dart` | CP, CE1, CE2 |
+| 🧭 Cycle 3 | `lib/curriculum/cycle3.dart` | CM1, CM2, 6e |
+| 📐 Cycle 4 | `lib/curriculum/cycle4.dart` | 5e, 4e, 3e |
+| 🎓 Lycée | `lib/curriculum/lycee.dart` | 2nde, 1re, Terminale (spécialité) |
 
-Chaque fichier contient en haut un **modèle de chapitre** à copier. Un chapitre = une fonction
-`(niveau 1..5, hasard) → Question(prompt, answer, explanation)`. Dès qu'un cycle a au moins
-un chapitre, il devient jouable dans l'écran « Choisis ton niveau », avec les 4 mini-jeux,
-le village et l'espace parent. **Pas besoin de toucher aux autres fichiers.**
+Chapitres construits d'après les programmes officiels (dossier `docs` des specs).
+Un chapitre = une fonction `(niveau 1..5, hasard) → Question`. Types de questions :
+- `Question(...)` : réponse numérique (case à remplir, mini-jeux) ;
+- `Question.text(...)` : réponse en texte (fraction, forme, mot) en QCM ;
+- `Question.graph(...)` : placer un point sur une **droite graduée** ou dans un **repère**.
 
-Le style (couleurs, nom, mascotte) est centralisé dans `lib/theme.dart`.
+Écriture mathématique dans les textes : `\frac{3}{4}`, `x^{2}`, `u_{n}`, `\sqrt{16}`, `\int`.
 
 Pour vérifier que tous les chapitres génèrent des questions valides : `flutter test`.
+
+## ✏️ Deux façons de jouer chaque chapitre
+
+- **Mini-jeu** (ballons, fruits, course, duel) : réponses à choisir, pièces et village.
+- **Exercices** (façon Mathraining) : un énoncé, une case réponse, « Soumettre ».
+  Les chapitres de graphiques se font uniquement dans ce mode.
+
+## 🎯 Personnalisation
+
+- Chapitre **recommandé** sur la carte (lacunes + oubli + nouveautés).
+- **Révision express** : 80 % de questions sur les points faibles.
+- Espace parent : temps moyen de réponse, parties de la semaine, prochain chapitre conseillé.
+
+## ⭐ Freemium
+
+Gratuit, avec une fenêtre « pub » une partie sur trois qui propose **Mathou Premium**
+(4,99 €/mois ou 39,99 €/an, 7 jours d'essai). Version démo : aucun paiement réel.
+Fichier : `lib/screens/premium_screen.dart`.
 
 ## Ce que contient le MVP
 
@@ -59,7 +88,7 @@ Pour vérifier que tous les chapitres génèrent des questions valides : `flutte
 |---|---|
 | Écran d'accueil + prénom de l'enfant | `lib/screens/onboarding_screen.dart`, `welcome_screen.dart` |
 | Carte de progression (5 leçons, déblocage) | `lib/screens/map_screen.dart` |
-| Leçon : QCM, saisie (pavé numérique), vrai/faux, 3 cœurs, XP | `lib/screens/lesson_screen.dart` |
+| Mode Exercices (case réponse, QCM, droite graduée, repère) | `lib/screens/exercise_screen.dart` |
 | Écran de fin + confettis | `lib/screens/result_screen.dart` |
 | Espace parent (contrôle parental, stats, analyse) | `lib/screens/parent_gate.dart`, `parent_dashboard_screen.dart` |
 | Générateur d'exercices (5 niveaux par compétence + explications) | `lib/logic/exercise_generator.dart` |

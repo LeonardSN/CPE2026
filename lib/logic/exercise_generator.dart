@@ -3,9 +3,9 @@ import 'dart:math';
 import '../models/exercise.dart';
 import '../models/skill.dart';
 
-/// Génère des exercices à la volée selon la compétence et le niveau (1 à 5).
-/// Pas besoin de banque d'exercices : les nombres sont tirés au hasard
-/// dans des plages qui correspondent à chaque niveau de difficulté.
+/// Transforme les questions des chapitres en exercices affichables :
+/// - generateChoices : pour les mini-jeux (toujours un choix parmi N)
+/// - generate        : pour le mode Exercices (case à remplir, QCM, graphique)
 class ExerciseGenerator {
   final Random _rng;
 
@@ -13,90 +13,101 @@ class ExerciseGenerator {
 
   T _pick<T>(List<T> list) => list[_rng.nextInt(list.length)];
 
-  Exercise generate(String skillId, int level) {
-    level = level.clamp(1, 5);
-    return _wrap(skillId, level, _coreFor(skillId, level));
+  Question _question(String skillId, int level) {
+    final chapter = Skills.byId(skillId);
+    return chapter.generate!(level.clamp(1, 5), _rng);
   }
 
-  /// Version « mini-jeu » : toujours un choix parmi [count] réponses
+  /// Version « mini-jeu » : un choix parmi [count] réponses
   /// (ballons, fruits, voitures, cartes...).
   Exercise generateChoices(String skillId, int level, int count) {
     level = level.clamp(1, 5);
-    final core = _coreFor(skillId, level);
+    var q = _question(skillId, level);
+    // Les questions à graphique ne se jouent pas en mini-jeu.
+    for (var i = 0; i < 5 && q.isGraph; i++) {
+      q = _question(skillId, level);
+    }
     return Exercise(
       skillId: skillId,
       level: level,
       type: ExerciseType.multipleChoice,
-      prompt: core.text,
-      answer: '${core.value}',
-      choices: _choices(core.value, count, core.preset),
-      explanation: core.explanation,
+      prompt: q.prompt,
+      answer: q.isText ? q.answerText! : '${q.answer}',
+      choices: q.isText
+          ? _textChoices(q.answerText!, q.textChoices!, count)
+          : _choices(q.answer, count, q.choices),
+      explanation: q.explanation,
     );
   }
 
-  /// Demande au chapitre (primaire.dart, college.dart, lycee.dart...)
-  /// de fabriquer une question du niveau voulu.
-  _Core _coreFor(String skillId, int level) {
-    final chapter = Skills.byId(skillId);
-    final q = chapter.generate!(level, _rng);
-    return _Core(q.prompt, q.answer, q.explanation,
-        allowTrueFalse: q.allowTrueFalse, preset: q.choices);
-  }
+  /// Version « Exercices » (façon Mathraining) : on écrit sa réponse dans
+  /// une case, ou on place un point sur un graphique.
+  Exercise generate(String skillId, int level, {bool allowTrueFalse = false}) {
+    level = level.clamp(1, 5);
+    final q = _question(skillId, level);
 
-  // ---------------------------------------------------------------------
-  // Mise en forme : QCM, saisie ou vrai/faux
-  // ---------------------------------------------------------------------
-  Exercise _wrap(String skillId, int level, _Core core) {
+    if (q.isGraph) {
+      return Exercise(
+        skillId: skillId,
+        level: level,
+        type: q.graph!.kind == GraphKind.numberLine
+            ? ExerciseType.numberLine
+            : ExerciseType.grid,
+        prompt: q.prompt,
+        answer: q.graph!.answerKey,
+        explanation: q.explanation,
+        graph: q.graph,
+      );
+    }
+    if (q.isText) {
+      return Exercise(
+        skillId: skillId,
+        level: level,
+        type: ExerciseType.multipleChoice,
+        prompt: q.prompt,
+        answer: q.answerText!,
+        choices: _textChoices(q.answerText!, q.textChoices!, 4),
+        explanation: q.explanation,
+      );
+    }
+
+    // Réponse numérique : surtout la case à remplir, un peu de QCM
+    // (plus de QCM au niveau 1, pour les plus jeunes).
     final roll = _rng.nextDouble();
-    ExerciseType type;
-    if (roll < 0.5) {
-      type = ExerciseType.multipleChoice;
-    } else if (roll < 0.8 || !core.allowTrueFalse) {
-      type = ExerciseType.input;
-    } else {
-      type = ExerciseType.trueFalse;
+    final qcmShare = level == 1 ? 0.6 : 0.25;
+    if (allowTrueFalse && q.allowTrueFalse && roll > 0.9) {
+      final isTrue = _rng.nextBool();
+      final shown = isTrue ? q.answer : _wrongValue(q.answer);
+      return Exercise(
+        skillId: skillId,
+        level: level,
+        type: ExerciseType.trueFalse,
+        prompt: q.prompt.replaceFirst('?', '$shown'),
+        answer: isTrue ? 'vrai' : 'faux',
+        explanation: isTrue
+            ? 'C\'est bien vrai !\n${q.explanation}'
+            : 'C\'est faux : la bonne réponse est ${q.answer}.\n${q.explanation}',
+      );
     }
-    // Au niveau 1 on évite la saisie libre (trop dur pour les plus petits).
-    if (level == 1 && type == ExerciseType.input) {
-      type = ExerciseType.multipleChoice;
+    if (roll < qcmShare) {
+      return Exercise(
+        skillId: skillId,
+        level: level,
+        type: ExerciseType.multipleChoice,
+        prompt: q.prompt,
+        answer: '${q.answer}',
+        choices: _choices(q.answer, 4, q.choices),
+        explanation: q.explanation,
+      );
     }
-
-    switch (type) {
-      case ExerciseType.multipleChoice:
-        return Exercise(
-          skillId: skillId,
-          level: level,
-          type: type,
-          prompt: core.text,
-          answer: '${core.value}',
-          choices: _choices(core.value, 4, core.preset),
-          explanation: core.explanation,
-        );
-      case ExerciseType.input:
-        return Exercise(
-          skillId: skillId,
-          level: level,
-          type: type,
-          prompt: core.text,
-          answer: '${core.value}',
-          explanation: core.explanation,
-        );
-      case ExerciseType.trueFalse:
-        final isTrue = _rng.nextBool();
-        final shown = isTrue ? core.value : _wrongValue(core.value);
-        final statement = core.text.replaceFirst('?', '$shown');
-        return Exercise(
-          skillId: skillId,
-          level: level,
-          type: type,
-          prompt: statement,
-          answer: isTrue ? 'vrai' : 'faux',
-          explanation: isTrue
-              ? 'C\'est bien vrai !\n${core.explanation}'
-              : 'C\'est faux : la bonne réponse est ${core.value}.\n'
-                  '${core.explanation}',
-        );
-    }
+    return Exercise(
+      skillId: skillId,
+      level: level,
+      type: ExerciseType.input,
+      prompt: q.prompt,
+      answer: '${q.answer}',
+      explanation: q.explanation,
+    );
   }
 
   int _wrongValue(int v) {
@@ -104,6 +115,12 @@ class ExerciseGenerator {
         .where((x) => (v < 0 || x >= 0) && x != v)
         .toList();
     return _pick(options);
+  }
+
+  List<String> _textChoices(String answer, List<String> pool, int count) {
+    final others = pool.where((x) => x != answer).toSet().toList()..shuffle(_rng);
+    final list = [answer, ...others.take(count - 1)]..shuffle(_rng);
+    return list;
   }
 
   List<String> _choices(int v, [int count = 4, List<int>? preset]) {
@@ -126,16 +143,4 @@ class ExerciseGenerator {
     final list = [v, ...candidates.take(count - 1)]..shuffle(_rng);
     return list.map((e) => '$e').toList();
   }
-}
-
-class _Core {
-  final String text;
-  final int value;
-  final String explanation;
-  final bool allowTrueFalse;
-
-  final List<int>? preset;
-
-  _Core(this.text, this.value, this.explanation,
-      {this.allowTrueFalse = true, this.preset});
 }

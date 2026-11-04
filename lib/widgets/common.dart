@@ -3,22 +3,25 @@ import 'package:flutter/material.dart';
 import '../logic/sound.dart';
 import '../theme.dart';
 
+export 'math_text.dart';
+
 /// Bouton « 3D » façon jeu mobile, avec un rebord en bas.
+/// Sans couleur précisée, il prend la couleur principale du thème du cycle.
 class ChunkyButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
-  final Color color;
-  final Color shadowColor;
-  final Color textColor;
+  final Color? color;
+  final Color? shadowColor;
+  final Color? textColor;
   final double height;
 
   const ChunkyButton({
     super.key,
     required this.label,
     required this.onPressed,
-    this.color = AppColors.green,
-    this.shadowColor = AppColors.greenDark,
-    this.textColor = Colors.white,
+    this.color,
+    this.shadowColor,
+    this.textColor,
     this.height = 56,
   });
 
@@ -32,9 +35,12 @@ class _ChunkyButtonState extends State<ChunkyButton> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
-    final color = enabled ? widget.color : AppColors.grey;
-    final shadow = enabled ? widget.shadowColor : AppColors.greyDark;
-    final textColor = enabled ? widget.textColor : AppColors.greyDark;
+    final base = widget.color ?? context.colors.primary;
+    final color = enabled ? base : (context.isDark ? const Color(0xFF444444) : AppColors.grey);
+    final shadow = enabled
+        ? (widget.shadowColor ?? darker(base))
+        : (context.isDark ? const Color(0xFF333333) : AppColors.greyDark);
+    final textColor = enabled ? (widget.textColor ?? onColor(base)) : AppColors.greyDark;
     const depth = 5.0;
 
     return GestureDetector(
@@ -90,6 +96,69 @@ class _ChunkyButtonState extends State<ChunkyButton> {
   }
 }
 
+/// L'image de la mascotte (le chat Mathou).
+class MascotImage extends StatelessWidget {
+  final double size;
+
+  const MascotImage({super.key, this.size = 120});
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(AppInfo.mascotImage, width: size, height: size, fit: BoxFit.contain);
+  }
+}
+
+/// Le logo « Mathou » : le nom en Nunito avec le petit sourire orange.
+class MathouLogo extends StatelessWidget {
+  final double fontSize;
+  final Color? color;
+
+  const MathouLogo({super.key, this.fontSize = 44, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? (context.isDark ? Colors.white : Brand.navy);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          AppInfo.appName,
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontWeight: FontWeight.w900,
+            fontSize: fontSize,
+            color: c,
+            height: 1,
+          ),
+        ),
+        SizedBox(
+          width: fontSize * 2.2,
+          height: fontSize * 0.35,
+          child: CustomPaint(painter: _SmilePainter()),
+        ),
+      ],
+    );
+  }
+}
+
+class _SmilePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Brand.orange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.height * 0.28
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..moveTo(size.width * 0.1, size.height * 0.2)
+      ..quadraticBezierTo(size.width / 2, size.height * 1.1, size.width * 0.9, size.height * 0.2);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 /// La mascotte avec une bulle de dialogue.
 class Mascot extends StatelessWidget {
   final String message;
@@ -102,18 +171,19 @@ class Mascot extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(AppInfo.mascotEmoji, style: TextStyle(fontSize: size)),
+        MascotImage(size: size),
         const SizedBox(width: 8),
         Flexible(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey, width: 2),
+              color: context.card,
+              border: Border.all(color: context.colors.outline, width: 2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               message,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: AppText.body.copyWith(fontSize: 15),
             ),
           ),
         ),
@@ -125,13 +195,13 @@ class Mascot extends StatelessWidget {
 /// Barre de progression arrondie.
 class RoundedProgress extends StatelessWidget {
   final double value;
-  final Color color;
+  final Color? color;
   final double height;
 
   const RoundedProgress({
     super.key,
     required this.value,
-    this.color = AppColors.green,
+    this.color,
     this.height = 16,
   });
 
@@ -141,7 +211,7 @@ class RoundedProgress extends StatelessWidget {
       borderRadius: BorderRadius.circular(height),
       child: Stack(
         children: [
-          Container(height: height, color: AppColors.grey),
+          Container(height: height, color: context.colors.outline),
           AnimatedFractionallySizedBox(
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOut,
@@ -150,7 +220,7 @@ class RoundedProgress extends StatelessWidget {
             child: Container(
               height: height,
               decoration: BoxDecoration(
-                color: color,
+                color: color ?? context.colors.primary,
                 borderRadius: BorderRadius.circular(height),
               ),
             ),
@@ -190,6 +260,35 @@ class StatChip extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Carte arrondie qui suit le thème (clair / sombre).
+class AppCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets padding;
+  final Color? color;
+  final Color? borderColor;
+
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.color,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: color ?? context.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor ?? context.colors.outline, width: 2),
+      ),
+      child: child,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../logic/sound.dart';
 import '../models/game_type.dart';
+import '../widgets/math_text.dart';
 import 'game_base.dart';
 
 class FruitsGame extends GameScreen {
@@ -165,7 +166,7 @@ class _FruitView extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.black26, width: 2),
             ),
-            child: Text(
+            child: MathText(
               label,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
             ),

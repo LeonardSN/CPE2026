@@ -57,12 +57,24 @@ class ProgressStore extends ChangeNotifier {
   bool soundOn = true;
   bool musicOn = true;
 
+  /// 'system', 'light' ou 'dark'.
+  String themeMode = 'system';
+
+  /// Abonnement Premium (version démo : aucun paiement réel).
+  bool isPremium = false;
+  int adCounter = 0;
+
   final Map<String, double> ratings = {};
   final Map<String, int> attempts = {};
   final Map<String, int> successes = {};
   final Map<String, int> completions = {};
   final List<LessonRecord> history = [];
   final Map<String, int> plays = {};
+
+  /// Personnalisation : dernière pratique (ms) et temps de réponse par chapitre.
+  final Map<String, int> lastPracticed = {};
+  final Map<String, double> timeSum = {};
+  final Map<String, int> timeCount = {};
 
   /// Cases du village : index de la case -> id de l'élément construit.
   final Map<int, String> village = {};
@@ -82,6 +94,12 @@ class ProgressStore extends ChangeNotifier {
     cycleId = _prefs.getString('cycleId') ?? '';
     soundOn = _prefs.getBool('soundOn') ?? true;
     musicOn = _prefs.getBool('musicOn') ?? true;
+    themeMode = _prefs.getString('themeMode') ?? 'system';
+    isPremium = _prefs.getBool('isPremium') ?? false;
+    adCounter = _prefs.getInt('adCounter') ?? 0;
+    _readMap('lastPracticed', lastPracticed, (v) => v as int);
+    _readMap('timeSum', timeSum, (v) => (v as num).toDouble());
+    _readMap('timeCount', timeCount, (v) => v as int);
     Sfx.soundOn = soundOn;
     Sfx.musicOn = musicOn;
     Curriculum.current = Curriculum.byId(cycleId);
@@ -119,6 +137,12 @@ class ProgressStore extends ChangeNotifier {
     await _prefs.setString('cycleId', cycleId);
     await _prefs.setBool('soundOn', soundOn);
     await _prefs.setBool('musicOn', musicOn);
+    await _prefs.setString('themeMode', themeMode);
+    await _prefs.setBool('isPremium', isPremium);
+    await _prefs.setInt('adCounter', adCounter);
+    await _prefs.setString('lastPracticed', jsonEncode(lastPracticed));
+    await _prefs.setString('timeSum', jsonEncode(timeSum));
+    await _prefs.setString('timeCount', jsonEncode(timeCount));
     await _prefs.setString('plays', jsonEncode(plays));
     await _prefs.setString(
         'village', jsonEncode(village.map((k, v) => MapEntry('$k', v))));
@@ -150,19 +174,102 @@ class ProgressStore extends ChangeNotifier {
   double masteryOf(String skillId) =>
       AdaptiveEngine.mastery(ratingOf(skillId));
 
-  /// Pour le Boss : on cible en priorité la compétence la plus faible.
-  String pickBossSkill(Random rng) {
-    if (rng.nextDouble() < 0.5) {
-      final sorted = [...Skills.tracked]
-        ..sort((a, b) => masteryOf(a.id).compareTo(masteryOf(b.id)));
-      return sorted.first.id;
+  /// Chapitres jouables en mini-jeu dans la classe en cours.
+  List<Skill> get _mixable =>
+      Skills.tracked.where((s) => !s.exerciseOnly).toList();
+
+  /// Pour le Boss (et la Révision) : on cible en priorité les points faibles.
+  String pickBossSkill(Random rng, {bool review = false}) {
+    final pool = _mixable;
+    if (pool.isEmpty) return Skills.tracked.first.id;
+    final weakShare = review ? 0.8 : 0.5;
+    if (rng.nextDouble() < weakShare) {
+      final sorted = [...pool]
+        ..sort((a, b) => needScore(b.id).compareTo(needScore(a.id)));
+      // un peu de hasard parmi les 2 plus prioritaires
+      return sorted[rng.nextInt(min(2, sorted.length))].id;
     }
-    return Skills.tracked[rng.nextInt(Skills.tracked.length)].id;
+    return pool[rng.nextInt(pool.length)].id;
+  }
+
+  // ------------------------------------------------------------------
+  // Personnalisation : rythme, lacunes, oubli
+  // ------------------------------------------------------------------
+
+  /// Jours écoulés depuis la dernière pratique d'un chapitre.
+  double daysSince(String skillId) {
+    final t = lastPracticed[skillId];
+    if (t == null) return 999;
+    return DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(t)).inHours / 24;
+  }
+
+  /// Besoin de travailler un chapitre (0 = rien à faire, ~1.5 = urgent) :
+  /// lacunes (maîtrise faible) + oubli (pas revu depuis longtemps).
+  double needScore(String skillId) {
+    if ((attempts[skillId] ?? 0) == 0) return 0.4;
+    final gap = 1 - masteryOf(skillId);
+    final forgetting = (daysSince(skillId) / 7).clamp(0.0, 1.0) * 0.5;
+    return gap + forgetting;
+  }
+
+  /// Temps moyen de réponse (secondes) pour un chapitre, ou global.
+  double? avgSeconds([String? skillId]) {
+    if (skillId != null) {
+      final n = timeCount[skillId] ?? 0;
+      return n == 0 ? null : timeSum[skillId]! / n;
+    }
+    final n = timeCount.values.fold(0, (a, b) => a + b);
+    if (n == 0) return null;
+    return timeSum.values.fold(0.0, (a, b) => a + b) / n;
+  }
+
+  /// Le chapitre conseillé maintenant, avec la raison.
+  (Skill, String)? get recommendation {
+    final chapters = Skills.all;
+    (Skill, String)? best;
+    var bestScore = -1.0;
+    for (var i = 0; i < chapters.length; i++) {
+      final ch = chapters[i];
+      if (ch.isBoss || !isUnlocked(i)) continue;
+      final tried = (attempts[ch.id] ?? 0) > 0;
+      double score;
+      String reason;
+      if (!tried) {
+        score = 0.55 - i * 0.01;
+        reason = 'Nouveau chapitre à découvrir';
+      } else {
+        score = needScore(ch.id);
+        final days = daysSince(ch.id);
+        if (masteryOf(ch.id) < 0.45) {
+          reason = 'Tu peux encore progresser ici';
+        } else if (days >= 3) {
+          reason = 'Pas revu depuis ${days.floor()} jours';
+        } else {
+          reason = 'Pour consolider';
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = (ch, reason);
+      }
+    }
+    return best;
+  }
+
+  /// Parties jouées ces 7 derniers jours.
+  int get sessionsThisWeek {
+    final limit = DateTime.now().subtract(const Duration(days: 7));
+    return history.where((h) => h.date.isAfter(limit)).length;
   }
 
   /// Enregistre une réponse. Renvoie le nouveau niveau si l'enfant
   /// vient de monter de niveau dans cette compétence (sinon null).
-  int? recordAnswer(Exercise ex, bool correct) {
+  int? recordAnswer(Exercise ex, bool correct, {double? seconds}) {
+    lastPracticed[ex.skillId] = DateTime.now().millisecondsSinceEpoch;
+    if (seconds != null && seconds > 0 && seconds < 120) {
+      timeSum[ex.skillId] = (timeSum[ex.skillId] ?? 0) + seconds;
+      timeCount[ex.skillId] = (timeCount[ex.skillId] ?? 0) + 1;
+    }
     final before = levelFor(ex.skillId);
     ratings[ex.skillId] =
         AdaptiveEngine.update(ratingOf(ex.skillId), ex.level, correct);
@@ -201,6 +308,29 @@ class ProgressStore extends ChangeNotifier {
   }
 
   // ------------------------------------------------------------------
+  // Thème et abonnement
+  // ------------------------------------------------------------------
+  Future<void> setThemeMode(String mode) async {
+    themeMode = mode;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setPremium(bool v) async {
+    isPremium = v;
+    await _save();
+    notifyListeners();
+  }
+
+  /// La pub « Premium » s'affiche une partie sur trois (version gratuite).
+  bool shouldShowAd() {
+    if (isPremium) return false;
+    adCounter++;
+    _save();
+    return adCounter % 3 == 0;
+  }
+
+  // ------------------------------------------------------------------
   // Sons
   // ------------------------------------------------------------------
   Future<void> setSound(bool v) async {
@@ -219,7 +349,7 @@ class ProgressStore extends ChangeNotifier {
   }
 
   // ------------------------------------------------------------------
-  // Cycle d'études (primaire, collège, lycée)
+  // Classe choisie (PS ... Terminale)
   // ------------------------------------------------------------------
   Future<void> setCycle(String id) async {
     cycleId = id;
@@ -331,6 +461,10 @@ class ProgressStore extends ChangeNotifier {
     coins = 30;
     plays.clear();
     village.clear();
+    lastPracticed.clear();
+    timeSum.clear();
+    timeCount.clear();
+    adCounter = 0;
     ratings.clear();
     attempts.clear();
     successes.clear();

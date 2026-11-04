@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
 import 'map_screen.dart';
 import 'village_screen.dart';
 
@@ -25,7 +24,6 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        indicatorColor: AppColors.lightGreen,
         destinations: const [
           NavigationDestination(
             icon: Text('🗺️', style: TextStyle(fontSize: 24)),

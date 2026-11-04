@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../logic/sound.dart';
 import '../models/game_type.dart';
 import '../theme.dart';
+import '../widgets/math_text.dart';
 import 'game_base.dart';
 
 class DuelGame extends GameScreen {
@@ -223,7 +224,7 @@ class _CardButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFB8860B), width: 3),
           ),
-          child: Text(
+          child: MathText(
             '⚔️ $label',
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
           ),

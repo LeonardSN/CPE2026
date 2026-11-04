@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../logic/sound.dart';
 import '../models/game_type.dart';
 import '../theme.dart';
+import '../widgets/math_text.dart';
 import 'game_base.dart';
 
 class RaceGame extends GameScreen {
@@ -224,7 +225,7 @@ class _AnswerButton extends StatelessWidget {
         child: SizedBox(
           height: 86,
           child: Center(
-            child: Text(
+            child: MathText(
               label,
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900),
             ),

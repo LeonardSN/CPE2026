@@ -19,9 +19,9 @@ class VillageScreen extends StatelessWidget {
         final (_, rankName, rankEmoji) = Village.rankFor(count);
         final next = Village.nextRank(count);
         return Scaffold(
-          backgroundColor: const Color(0xFFBFE9FF),
+          backgroundColor: context.isDark ? const Color(0xFF14273D) : const Color(0xFFBFE9FF),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFBFE9FF),
+            backgroundColor: context.isDark ? const Color(0xFF14273D) : const Color(0xFFBFE9FF),
             title: Text('Le village de ${store.childName}',
                 style: const TextStyle(fontWeight: FontWeight.w800)),
             actions: [
@@ -39,7 +39,7 @@ class VillageScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.card,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
@@ -57,7 +57,7 @@ class VillageScreen extends StatelessWidget {
                             next == null
                                 ? 'Bravo, ton village est au maximum ! 🎉'
                                 : 'Encore ${next.$1 - count} construction(s) pour devenir « ${next.$2} »',
-                            style: const TextStyle(color: AppColors.greyDark),
+                            style: TextStyle(color: context.muted),
                           ),
                           if (next != null) ...[
                             const SizedBox(height: 6),
@@ -186,7 +186,7 @@ class VillageScreen extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.grey, width: 2),
+                          border: Border.all(color: context.colors.outline, width: 2),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,

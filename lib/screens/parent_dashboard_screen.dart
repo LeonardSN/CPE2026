@@ -4,6 +4,7 @@ import '../logic/progress_store.dart';
 import '../models/skill.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'premium_screen.dart';
 
 /// Tableau de bord pour les parents : ce qui intéresse le client payeur.
 class ParentDashboardScreen extends StatelessWidget {
@@ -16,10 +17,10 @@ class ParentDashboardScreen extends StatelessWidget {
       listenable: store,
       builder: (context, _) {
         final minutes = (store.totalSeconds / 60).round();
+        final avg = store.avgSeconds();
+        final reco = store.recommendation;
         return Scaffold(
-          backgroundColor: const Color(0xFFF7F7F7),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFF7F7F7),
             title: Text('Suivi de ${store.childName}',
                 style: const TextStyle(fontWeight: FontWeight.w800)),
           ),
@@ -57,6 +58,60 @@ class ParentDashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
+              // ---- Abonnement ----
+              _Section(
+                title: store.isPremium ? '⭐ Mathou Premium' : '⭐ Version gratuite',
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        store.isPremium
+                            ? 'Abonnement actif : pas de publicité, toutes les classes, rapports détaillés.'
+                            : 'Passez à Premium : sans publicité, rapports détaillés, '
+                                'parcours illimité. $premiumMonthly / mois.',
+                        style: AppText.body.copyWith(fontSize: 14),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: Brand.orange),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PremiumScreen()),
+                      ),
+                      child: Text(store.isPremium ? 'Gérer' : 'Découvrir'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ---- Rythme et personnalisation ----
+              _Section(
+                title: '⏱️ Rythme d\'apprentissage',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _InsightLine(
+                      color: AppColors.blue,
+                      text: avg == null
+                          ? 'Temps moyen par réponse : pas encore de données.'
+                          : 'Temps moyen par réponse : ${avg.toStringAsFixed(1).replaceAll('.', ',')} s'
+                              '${avg < 6 ? ' (rapide ⚡)' : avg > 15 ? ' (prend son temps 🐢)' : ''}.',
+                    ),
+                    _InsightLine(
+                      color: AppColors.green,
+                      text: 'Parties ces 7 derniers jours : ${store.sessionsThisWeek}.',
+                    ),
+                    if (reco != null)
+                      _InsightLine(
+                        color: Brand.orange,
+                        text: 'Prochain chapitre conseillé : ${reco.$1.title} — ${reco.$2.toLowerCase()}.',
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // ---- Analyse automatique ----
               _Section(
                 title: '🧠 Analyse de ${AppInfo.mascotName}',
@@ -79,8 +134,8 @@ class ParentDashboardScreen extends StatelessWidget {
               _Section(
                 title: '🗓️ Dernières leçons',
                 child: store.history.isEmpty
-                    ? const Text('Aucune leçon terminée pour l\'instant.',
-                        style: TextStyle(color: AppColors.greyDark))
+                    ? Text('Aucune leçon terminée pour l\'instant.',
+                        style: TextStyle(color: context.muted))
                     : Column(
                         children: [
                           for (final h in store.history
@@ -96,7 +151,7 @@ class ParentDashboardScreen extends StatelessWidget {
                                   '${_fmtDate(h.date)} · ${h.correct}/${h.total} bonnes réponses'),
                               trailing: Text(
                                 '${(h.seconds / 60).ceil()} min',
-                                style: const TextStyle(color: AppColors.greyDark),
+                                style: TextStyle(color: context.muted),
                               ),
                             ),
                         ],
@@ -109,6 +164,23 @@ class ParentDashboardScreen extends StatelessWidget {
                 title: '⚙️ Réglages',
                 child: Column(
                   children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text('🌗 Apparence', style: TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                        SegmentedButton<String>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(value: 'system', label: Text('Auto')),
+                            ButtonSegment(value: 'light', label: Text('Clair')),
+                            ButtonSegment(value: 'dark', label: Text('Sombre')),
+                          ],
+                          selected: {store.themeMode},
+                          onSelectionChanged: (v) => store.setThemeMode(v.first),
+                        ),
+                      ],
+                    ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('🔊 Effets sonores'),
@@ -232,7 +304,7 @@ class _InsightLine extends StatelessWidget {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 15, height: 1.4)),
+            child: Text(text, style: AppText.body.copyWith(fontSize: 14)),
           ),
         ],
       ),
@@ -264,7 +336,7 @@ class _SkillRow extends StatelessWidget {
                 tried
                     ? 'Niv. ${store.levelFor(skill.id)} · ${(m * 100).round()} %'
                     : 'Pas commencé',
-                style: const TextStyle(color: AppColors.greyDark, fontWeight: FontWeight.w600),
+                style: TextStyle(color: context.muted, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -289,9 +361,9 @@ class _KpiCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.grey, width: 2),
+          border: Border.all(color: context.colors.outline, width: 2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,7 +372,7 @@ class _KpiCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(value,
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-            Text(label, style: const TextStyle(color: AppColors.greyDark)),
+            Text(label, style: TextStyle(color: context.muted)),
           ],
         ),
       ),
@@ -319,9 +391,9 @@ class _Section extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.grey, width: 2),
+        border: Border.all(color: context.colors.outline, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'curriculum/curriculum.dart';
 import 'logic/progress_store.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -19,13 +20,26 @@ class MathouApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = ProgressStore.instance;
-    return MaterialApp(
-      title: AppInfo.appName,
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
-      home: store.childName.isEmpty
-          ? const OnboardingScreen()
-          : const WelcomeScreen(),
+    // Le thème suit le cycle choisi (Cycle 1 ... Lycée) et le mode clair/sombre.
+    return ListenableBuilder(
+      listenable: store,
+      builder: (context, _) {
+        final schoolId = Curriculum.currentSchool.id;
+        return MaterialApp(
+          title: AppInfo.appName,
+          debugShowCheckedModeBanner: false,
+          theme: buildTheme(schoolId, Brightness.light),
+          darkTheme: buildTheme(schoolId, Brightness.dark),
+          themeMode: switch (store.themeMode) {
+            'light' => ThemeMode.light,
+            'dark' => ThemeMode.dark,
+            _ => ThemeMode.system,
+          },
+          home: store.childName.isEmpty
+              ? const OnboardingScreen()
+              : const WelcomeScreen(),
+        );
+      },
     );
   }
 }

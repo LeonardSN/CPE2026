@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../logic/sound.dart';
 import '../models/game_type.dart';
+import '../widgets/math_text.dart';
 import 'game_base.dart';
 
 class BalloonsGame extends GameScreen {
@@ -175,7 +176,7 @@ class _BalloonView extends StatelessWidget {
                 BoxShadow(color: Colors.black26, offset: Offset(2, 4), blurRadius: 4)
               ],
             ),
-            child: Text(
+            child: MathText(
               balloon.label,
               style: const TextStyle(
                 color: Colors.white,

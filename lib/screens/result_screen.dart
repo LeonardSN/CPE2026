@@ -2,9 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../games/game_launcher.dart';
 import '../logic/progress_store.dart';
 import '../models/skill.dart';
+import 'premium_screen.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
@@ -16,6 +16,9 @@ class ResultScreen extends StatefulWidget {
   final int seconds;
   final Skill skill;
 
+  /// Écran à ouvrir pour rejouer (mini-jeu ou exercices).
+  final Widget Function() retry;
+
   const ResultScreen({
     super.key,
     required this.success,
@@ -24,6 +27,7 @@ class ResultScreen extends StatefulWidget {
     required this.accuracy,
     required this.seconds,
     required this.skill,
+    required this.retry,
   });
 
   @override
@@ -41,6 +45,12 @@ class _ResultScreenState extends State<ResultScreen>
   void initState() {
     super.initState();
     if (widget.success) _anim.forward();
+    // Version gratuite : de temps en temps, une fenêtre propose Premium.
+    if (ProgressStore.instance.shouldShowAd()) {
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (mounted) showPremiumPopup(context);
+      });
+    }
   }
 
   @override
@@ -70,8 +80,9 @@ class _ResultScreenState extends State<ResultScreen>
                       duration: const Duration(milliseconds: 700),
                       curve: Curves.elasticOut,
                       builder: (_, v, child) => Transform.scale(scale: v, child: child),
-                      child: Text(s ? '🏆' : AppInfo.mascotEmoji,
-                          style: const TextStyle(fontSize: 120)),
+                      child: s
+                          ? const Text('🏆', style: TextStyle(fontSize: 120))
+                          : const MascotImage(size: 150),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -92,7 +103,7 @@ class _ResultScreenState extends State<ResultScreen>
                             '${AppInfo.mascotName} va adapter les calculs pour toi.\n'
                             'Tu gardes les ${widget.coinsEarned} pièces gagnées 🪙',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 17, color: AppColors.greyDark),
+                    style: AppText.body.copyWith(fontSize: 16, color: context.muted),
                   ),
                   const SizedBox(height: 32),
                   Row(
@@ -123,10 +134,8 @@ class _ResultScreenState extends State<ResultScreen>
                       if (s) {
                         Navigator.of(context).pop();
                       } else {
-                        final store = ProgressStore.instance;
                         Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (_) => gameScreenFor(
-                              widget.skill, store.nextGameFor(widget.skill)),
+                          builder: (_) => widget.retry(),
                         ));
                       }
                     },

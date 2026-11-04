@@ -30,7 +30,7 @@ class CycleSelectScreen extends StatelessWidget {
             const Text(
               'Tu pourras en changer quand tu veux.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.greyDark, fontSize: 15),
+              style: TextStyle(fontSize: 15),
             ),
             const SizedBox(height: 24),
             for (final school in Curriculum.schools) ...[
@@ -175,7 +175,9 @@ class _BigCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(compact ? 14 : 18),
         decoration: BoxDecoration(
-          color: enabled ? c.withValues(alpha: 0.12) : const Color(0xFFF2F2F2),
+          color: enabled
+              ? c.withValues(alpha: context.isDark ? 0.22 : 0.12)
+              : (context.isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF2F2F2)),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: c, width: selected ? 4 : 2),
           boxShadow: [
@@ -194,14 +196,14 @@ class _BigCard extends StatelessWidget {
                       style: TextStyle(
                           fontSize: compact ? 22 : 24,
                           fontWeight: FontWeight.w900,
-                          color: c)),
+                          color: context.isDark && c.computeLuminance() < 0.2 ? Colors.white : c)),
                   Text(subtitle,
-                      style: const TextStyle(fontSize: 14, color: AppColors.greyDark)),
+                      style: AppText.body.copyWith(fontSize: 14, color: context.muted)),
                   const SizedBox(height: 4),
                   Text(info,
                       style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: enabled ? AppColors.text : AppColors.greyDark)),
+                          color: enabled ? null : context.muted)),
                 ],
               ),
             ),

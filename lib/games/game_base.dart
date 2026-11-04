@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import '../curriculum/curriculum.dart';
 import '../logic/exercise_generator.dart';
 import '../logic/progress_store.dart';
 import '../logic/sound.dart';
@@ -12,6 +13,8 @@ import '../models/game_type.dart';
 import '../models/skill.dart';
 import '../screens/result_screen.dart';
 import '../theme.dart';
+import '../widgets/math_text.dart';
+import 'game_launcher.dart';
 
 /// Écran de mini-jeu : reçoit la compétence travaillée.
 abstract class GameScreen extends StatefulWidget {
@@ -67,6 +70,9 @@ abstract class GameState<T extends GameScreen> extends State<T>
   /// Exercice raté affiché dans la fenêtre d'explication.
   Exercise? mistake;
 
+  /// Moment où la question en cours est apparue (temps de réponse).
+  DateTime _askedAt = DateTime.now();
+
   Skill get skill => widget.skill;
   bool get acceptsInput => !paused && !finished && !busy;
 
@@ -99,7 +105,7 @@ abstract class GameState<T extends GameScreen> extends State<T>
 
   Exercise _makeQuestion() {
     final skillId =
-        skill.isBoss ? store.pickBossSkill(rng) : skill.id;
+        skill.isBoss ? store.pickBossSkill(rng, review: skill.isReview) : skill.id;
     return generator.generateChoices(
         skillId, store.levelFor(skillId), numChoices);
   }
@@ -109,6 +115,7 @@ abstract class GameState<T extends GameScreen> extends State<T>
     setState(() {
       busy = false;
       current = _makeQuestion();
+      _askedAt = DateTime.now();
       onNewQuestion();
     });
   }
@@ -118,7 +125,8 @@ abstract class GameState<T extends GameScreen> extends State<T>
   void submit(String? choice) {
     if (!acceptsInput) return;
     final ok = choice != null && current.check(choice);
-    final levelUp = store.recordAnswer(current, ok);
+    final levelUp = store.recordAnswer(current, ok,
+        seconds: DateTime.now().difference(_askedAt).inMilliseconds / 1000);
     answered++;
 
     if (ok) {
@@ -215,6 +223,7 @@ abstract class GameState<T extends GameScreen> extends State<T>
           accuracy: answered == 0 ? 0 : rightAnswers / answered,
           seconds: seconds,
           skill: skill,
+          retry: () => gameScreenFor(skill, store.nextGameFor(skill)),
         ),
       ),
     );
@@ -232,6 +241,14 @@ abstract class GameState<T extends GameScreen> extends State<T>
 
   @override
   Widget build(BuildContext context) {
+    // Les mini-jeux gardent leurs couleurs vives, même en mode sombre.
+    return Theme(
+      data: buildTheme(Curriculum.currentSchool.id, Brightness.light),
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
@@ -328,7 +345,7 @@ abstract class GameState<T extends GameScreen> extends State<T>
           BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 6)
         ],
       ),
-      child: Text(
+      child: MathText(
         current.prompt,
         textAlign: TextAlign.center,
         style: TextStyle(
@@ -367,14 +384,14 @@ abstract class GameState<T extends GameScreen> extends State<T>
                       fontWeight: FontWeight.w900,
                       color: AppColors.red)),
               const SizedBox(height: 10),
-              Text(
+              MathText(
                 _isEquation(ex) ? ex.prompt.replaceFirst('?', ex.answer) : ex.prompt,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Brand.ink),
               ),
               if (!_isEquation(ex)) ...[
                 const SizedBox(height: 6),
-                Text('Réponse : ${ex.answer}',
+                MathText('Réponse : ${ex.answer}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                         fontSize: 20,
@@ -388,9 +405,18 @@ abstract class GameState<T extends GameScreen> extends State<T>
                   color: const Color(0xFFFFF4E0),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Text(
-                  '${AppInfo.mascotEmoji} ${ex.explanation}',
-                  style: const TextStyle(fontSize: 15, height: 1.4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(AppInfo.mascotImage, width: 40, height: 40),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: MathText(
+                        ex.explanation,
+                        style: AppText.body.copyWith(fontSize: 15, color: Brand.ink),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),

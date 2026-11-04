@@ -1,6 +1,8 @@
-enum ExerciseType { multipleChoice, input, trueFalse }
+import '../curriculum/cycle.dart';
 
-/// Un exercice généré automatiquement.
+enum ExerciseType { multipleChoice, input, trueFalse, numberLine, grid }
+
+/// Un exercice prêt à être affiché (dans un mini-jeu ou en mode Exercices).
 class Exercise {
   final String skillId;
 
@@ -8,10 +10,10 @@ class Exercise {
   final int level;
   final ExerciseType type;
 
-  /// Texte affiché à l'enfant (ex : "7 + 5 = ?").
+  /// Texte affiché (peut contenir des \frac{}{}, x^{2}...).
   final String prompt;
 
-  /// Bonne réponse attendue, sous forme de texte ("12", "vrai", "faux").
+  /// Bonne réponse attendue, sous forme de texte ("12", "\frac{1}{2}", "3;-2"...).
   final String answer;
 
   /// Propositions pour les QCM (vide sinon).
@@ -19,6 +21,9 @@ class Exercise {
 
   /// Explication pas à pas affichée en cas d'erreur.
   final String explanation;
+
+  /// Graphique pour les types numberLine et grid.
+  final GraphSpec? graph;
 
   const Exercise({
     required this.skillId,
@@ -28,8 +33,11 @@ class Exercise {
     required this.answer,
     required this.explanation,
     this.choices = const [],
+    this.graph,
   });
 
-  bool check(String userAnswer) =>
-      userAnswer.trim().toLowerCase() == answer.trim().toLowerCase();
+  static String _norm(String s) =>
+      s.trim().toLowerCase().replaceAll('−', '-').replaceAll(' ', '');
+
+  bool check(String userAnswer) => _norm(userAnswer) == _norm(answer);
 }
