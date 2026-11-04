@@ -66,9 +66,9 @@ class ParentDashboardScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         store.isPremium
-                            ? 'Abonnement actif : pas de publicité, toutes les classes, rapports détaillés.'
-                            : 'Passez à Premium : sans publicité, rapports détaillés, '
-                                'parcours illimité. $premiumMonthly / mois.',
+                            ? 'Abonnement actif : sans publicité, exercices illimités, suivi détaillé, révisions personnalisées.'
+                            : 'Passez à Premium : sans publicité, exercices illimités, suivi détaillé. '
+                                '$premiumMonthly / mois, $premiumYearly / an ou $premiumFamily / an en famille (4 profils).',
                         style: AppText.body.copyWith(fontSize: 14),
                       ),
                     ),

@@ -7,19 +7,21 @@ import '../widgets/common.dart';
 // =====================================================================
 //  FREEMIUM
 //  L'app est gratuite. De temps en temps (une partie sur trois), une
-//  fenêtre propose de passer à Mathou Premium (abonnement mensuel).
+//  fenêtre propose de passer à Mathou Premium (mensuel, annuel ou familial).
 //  VERSION DÉMO : aucun paiement réel n'est effectué.
 // =====================================================================
 
-const premiumMonthly = '4,99 €';
-const premiumYearly = '39,99 €';
+// Tarifs du business plan (Drive de l'équipe).
+const premiumMonthly = '6,99 €';
+const premiumYearly = '49,99 €';
+const premiumYearlyPerMonth = '4,16 €';
+const premiumFamily = '79,99 €';
 
 const _benefits = [
-  ('🚫', 'Plus aucune publicité'),
-  ('📚', 'Toutes les classes, de la maternelle à la Terminale'),
-  ('📊', 'Rapports détaillés pour les parents'),
-  ('🎯', 'Parcours personnalisé et révisions illimitées'),
-  ('👨‍👩‍👧', 'Jusqu\'à 4 profils enfants'),
+  ('🚫', 'Une expérience sans publicité'),
+  ('♾️', 'Accès illimité aux exercices'),
+  ('📊', 'Suivi détaillé des progressions'),
+  ('🎯', 'Parcours de révision personnalisés sur les points faibles'),
 ];
 
 /// Fenêtre « pub » : propose l'abonnement mensuel.
@@ -127,12 +129,12 @@ class _PremiumPopupState extends State<_PremiumPopup> {
                     ),
                   ),
                 const SizedBox(height: 6),
-                Text('7 jours gratuits, puis $premiumMonthly / mois',
+                Text('À partir de $premiumYearlyPerMonth / mois',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                 const SizedBox(height: 12),
                 ChunkyButton(
-                  label: 'Essayer gratuitement',
+                  label: 'Voir les formules',
                   color: Brand.orange,
                   onPressed: () {
                     final nav = Navigator.of(context);
@@ -163,7 +165,8 @@ class PremiumScreen extends StatefulWidget {
 }
 
 class _PremiumScreenState extends State<PremiumScreen> {
-  bool _yearly = false;
+  /// 0 = mensuel, 1 = annuel, 2 = familial.
+  int _plan = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -206,22 +209,35 @@ class _PremiumScreenState extends State<PremiumScreen> {
               _PlanTile(
                 title: 'Mensuel',
                 price: '$premiumMonthly / mois',
-                note: '7 jours d\'essai gratuit · sans engagement',
-                selected: !_yearly,
-                onTap: () => setState(() => _yearly = false),
+                note: 'Flexible, sans engagement',
+                selected: _plan == 0,
+                onTap: () => setState(() => _plan = 0),
               ),
               const SizedBox(height: 10),
               _PlanTile(
                 title: 'Annuel',
                 price: '$premiumYearly / an',
-                note: 'Soit 3,33 € / mois · 2 mois offerts',
-                badge: '-33 %',
-                selected: _yearly,
-                onTap: () => setState(() => _yearly = true),
+                note: 'Soit environ $premiumYearlyPerMonth / mois',
+                badge: '-40 %',
+                selected: _plan == 1,
+                onTap: () => setState(() => _plan = 1),
+              ),
+              const SizedBox(height: 10),
+              _PlanTile(
+                title: 'Familial',
+                price: '$premiumFamily / an',
+                note: 'Jusqu\'à 4 profils dans le même foyer · soit environ 1,67 € / mois par enfant',
+                badge: '4 profils',
+                selected: _plan == 2,
+                onTap: () => setState(() => _plan = 2),
               ),
               const SizedBox(height: 18),
               ChunkyButton(
-                label: 'Commencer l\'essai gratuit',
+                label: switch (_plan) {
+                  0 => 'S\'abonner · $premiumMonthly / mois',
+                  1 => 'S\'abonner · $premiumYearly / an',
+                  _ => 'S\'abonner · $premiumFamily / an',
+                },
                 color: Brand.orange,
                 onPressed: () async {
                   await store.setPremium(true);

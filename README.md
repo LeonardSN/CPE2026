@@ -79,7 +79,7 @@ Pour vérifier que tous les chapitres génèrent des questions valides : `flutte
 ## ⭐ Freemium
 
 Gratuit, avec une fenêtre « pub » une partie sur trois qui propose **Mathou Premium**
-(4,99 €/mois ou 39,99 €/an, 7 jours d'essai). Version démo : aucun paiement réel.
+(6,99 €/mois, 49,99 €/an ou 79,99 €/an en formule familiale jusqu’à 4 profils). Version démo : aucun paiement réel.
 Fichier : `lib/screens/premium_screen.dart`.
 
 ## Ce que contient le MVP
