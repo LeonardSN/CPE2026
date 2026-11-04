@@ -1,0 +1,73 @@
+# Compile automatiquement l'app à chaque push, sur n'importe quelle branche :
+#  - tests (flutter test)
+#  - version web en ligne : https://<compte>.github.io/<dépôt>/<branche>/
+#  - APK Android téléchargeable (onglet Actions > le dernier run > Artifacts)
+name: Build Mathou
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Ajouter la plateforme web
+        run: flutter create . --platforms web --project-name mathou
+      - run: flutter pub get
+      - name: Compiler la version web
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/${{ github.ref_name }}/"
+      - name: Mettre en ligne (GitHub Pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          destination_dir: ${{ github.ref_name }}
+          keep_files: true
+      - name: Lien de la version web
+        run: echo "### 🌐 https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.ref_name }}/" >> $GITHUB_STEP_SUMMARY
+
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Compiler l'APK
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mathou-${{ github.ref_name }}-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
