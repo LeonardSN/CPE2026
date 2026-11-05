@@ -29,11 +29,26 @@ android {
         versionName = flutter.versionName
     }
 
+    // Clé de signature de démonstration (CPE 2026), partagée par toute l'équipe :
+    // ainsi l'APK téléchargé depuis le lien et celui installé avec `flutter run`
+    // ont la même signature, et les mises à jour s'installent sans désinstaller.
+    // ⚠️ Pour une vraie publication sur le Play Store, créer une clé privée.
+    signingConfigs {
+        create("demo") {
+            storeFile = file("mathou-demo.p12")
+            storeType = "PKCS12"
+            storePassword = "mathou2026"
+            keyAlias = "mathou"
+            keyPassword = "mathou2026"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("demo")
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("demo")
         }
     }
 }
