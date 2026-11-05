@@ -53,6 +53,8 @@ jobs:
         run: echo "### 🌐 https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.ref_name }}/" >> $GITHUB_STEP_SUMMARY
 
   apk:
+    # Après la version web, pour ne pas publier sur GitHub Pages en même temps.
+    needs: web
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,8 +68,27 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Compiler l'APK
-        run: flutter build apk --release
+        # Numéro de version qui augmente à chaque compilation (mises à jour Android).
+        run: flutter build apk --release --build-number=${{ github.run_number }}
       - uses: actions/upload-artifact@v4
         with:
           name: mathou-${{ github.ref_name }}-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Préparer la page de téléchargement
+        if: github.ref_name == 'main'
+        run: |
+          mkdir -p public
+          cp build/app/outputs/flutter-apk/app-release.apk public/mathou.apk
+          cp download/* public/
+      - name: Publier l'APK et la page (GitHub Pages)
+        if: github.ref_name == 'main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: public
+          keep_files: true
+      - name: Liens
+        if: github.ref_name == 'main'
+        run: |
+          echo "### 📱 Page de téléchargement : https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
+          echo "### 🤖 APK Android : https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/mathou.apk" >> $GITHUB_STEP_SUMMARY
