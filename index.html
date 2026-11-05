@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Télécharger Mathou</title>
+  <meta name="theme-color" content="#16355F">
+  <link rel="icon" type="image/png" href="icon.png">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #16355F; color: #232323; }
+    .wrap { max-width: 460px; margin: 0 auto; padding: 28px 20px 40px; }
+    .head { text-align: center; color: white; }
+    .head img { width: 110px; height: 110px; border-radius: 26px; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+    .head h1 { margin: 14px 0 0; font-size: 40px; font-weight: 900; }
+    .smile { width: 90px; height: 12px; margin: 0 auto 10px; border-bottom: 6px solid #FF8C38; border-radius: 0 0 60px 60px; }
+    .head p { margin: 0 0 22px; opacity: .85; }
+    .card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 14px; }
+    .card h2 { margin: 0 0 6px; font-size: 20px; }
+    .card p, .card li { font-size: 15px; line-height: 1.45; color: #444; }
+    .btn { display: block; text-align: center; text-decoration: none; font-weight: 900; font-size: 17px;
+           padding: 15px; border-radius: 14px; margin-top: 10px; }
+    .orange { background: #FF8C38; color: white; box-shadow: 0 5px 0 #E0701E; }
+    .navy { background: #16355F; color: white; box-shadow: 0 5px 0 #0E2443; }
+    .hl { outline: 4px solid #FF8C38; }
+    ol { padding-left: 20px; margin: 8px 0 0; }
+    small { display: block; text-align: center; color: rgba(255,255,255,.6); margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <img src="icon.png" alt="Mathou">
+      <h1>Mathou</h1>
+      <div class="smile"></div>
+      <p>Les maths en s'amusant, de la maternelle à la Terminale</p>
+    </div>
+
+    <div class="card" id="android">
+      <h2>🤖 Android</h2>
+      <p>Télécharge l'application et installe-la :</p>
+      <a class="btn orange" href="mathou.apk" download>📥 Télécharger l'app (APK)</a>
+      <ol>
+        <li>Ouvre le fichier téléchargé.</li>
+        <li>Si Android le demande, autorise « Installer des applications inconnues » pour ton navigateur.</li>
+        <li>Si un message « application non vérifiée » apparaît : <b>Installer quand même</b>.</li>
+      </ol>
+    </div>
+
+    <div class="card" id="iphone">
+      <h2>🍎 iPhone / iPad</h2>
+      <p>Ouvre l'app dans <b>Safari</b>, puis ajoute-la à ton écran d'accueil :</p>
+      <a class="btn navy" href="main/">▶️ Ouvrir Mathou</a>
+      <ol>
+        <li>Touche le bouton <b>Partager</b> (carré avec une flèche).</li>
+        <li>Choisis <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</li>
+        <li>L'icône du chat apparaît : Mathou s'ouvre en plein écran !</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>💻 Ordinateur</h2>
+      <a class="btn navy" href="main/">Jouer dans le navigateur</a>
+    </div>
+
+    <small>Projet Challenge Projets d'Entreprendre 2026 · équipe 10</small>
+  </div>
+  <script>
+    // Met en avant le bon bouton selon le téléphone.
+    var ua = navigator.userAgent;
+    if (/android/i.test(ua)) document.getElementById('android').classList.add('hl');
+    if (/iphone|ipad|ipod/i.test(ua)) {
+      var ios = document.getElementById('iphone');
+      ios.classList.add('hl');
+      ios.parentNode.insertBefore(ios, document.getElementById('android'));
+    }
+  </script>
+</body>
+</html>
